@@ -733,8 +733,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: 2,
-                      separatorBuilder: (_, __) => const SizedBox(width: 18),
-                      itemBuilder: (_, __) => const _PopularCardSkeleton(),
+                      separatorBuilder: (_, _) => const SizedBox(width: 18),
+                      itemBuilder: (_, _) => const _PopularCardSkeleton(),
                     )
                   : _nearbyError != null
                   ? Center(
@@ -771,7 +771,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: nearbyPreviewPlaces.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 18),
+                      separatorBuilder: (_, _) => const SizedBox(width: 18),
                       itemBuilder: (BuildContext context, int index) {
                         final _PopularPlace place = nearbyPreviewPlaces[index];
                         return _PopularCard(
@@ -901,7 +901,7 @@ class _ProfileAvatar extends StatelessWidget {
         image: DecorationImage(
           image: imageProvider,
           fit: BoxFit.cover,
-          onError: (_, __) {},
+          onError: (_, _) {},
         ),
       ),
     );
@@ -1127,7 +1127,7 @@ class _HomeSearchResultsCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       shrinkWrap: true,
                       itemCount: results.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (BuildContext context, int index) {
                         final _HomeSearchResult result = results[index];
                         return _HomeSearchResultTile(
@@ -1301,7 +1301,7 @@ class _LiveEventCard extends StatelessWidget {
               width: 125,
               height: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 width: 98,
                 height: double.infinity,
                 color: const Color(0xFFE2E8F1),
@@ -1612,7 +1612,7 @@ class _PopularCard extends StatelessWidget {
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 height: 180,
                 color: const Color(0xFFE2E8F1),
                 child: const Icon(Icons.photo, size: 40),
@@ -1958,7 +1958,7 @@ class _AvatarStack extends StatelessWidget {
                   image: DecorationImage(
                     image: NetworkImage(avatars[index]),
                     fit: BoxFit.cover,
-                    onError: (_, __) {},
+                    onError: (_, _) {},
                   ),
                 ),
               ),
@@ -2023,7 +2023,7 @@ class _RecommendedCard extends StatelessWidget {
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   width: 64,
                   height: 64,
                   color: const Color(0xFFE2E8F1),
@@ -2045,48 +2045,62 @@ class _RecommendedCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(
-                            CupertinoIcons.location_solid,
-                            size: 14,
-                            color: Color(0xFF3A4A5A),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            data.location,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF3A4A5A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(
-                            CupertinoIcons.calendar,
-                            size: 14,
-                            color: Color(0xFF3A4A5A),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            data.date,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF3A4A5A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                          return Wrap(
+                            spacing: 10,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: <Widget>[
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: constraints.maxWidth,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    const Icon(
+                                      CupertinoIcons.location_solid,
+                                      size: 14,
+                                      color: Color(0xFF3A4A5A),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        data.location,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF3A4A5A),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  const Icon(
+                                    CupertinoIcons.calendar,
+                                    size: 14,
+                                    color: Color(0xFF3A4A5A),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    data.date,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF3A4A5A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                   ),
                   const SizedBox(height: 6),
                   Wrap(

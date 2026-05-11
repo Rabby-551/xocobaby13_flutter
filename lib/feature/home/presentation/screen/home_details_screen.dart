@@ -1227,8 +1227,8 @@ class _HomeDetailsScreenState extends State<HomeDetailsScreen> {
                         Expanded(
                           child: Text(
                             locationLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            // maxLines: 3,
+                            overflow: TextOverflow.visible,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF3A4A5A),

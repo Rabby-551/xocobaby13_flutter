@@ -69,14 +69,20 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List<Widget>.generate(
-                _tabs.length,
-                (int index) => _BookingTab(
-                  label: _tabs[index],
-                  isSelected: _selectedTabIndex == index,
-                  onTap: () => setState(() => _selectedTabIndex = index),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: List<Widget>.generate(
+                  _tabs.length,
+                  (int index) => Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _BookingTab(
+                      label: _tabs[index],
+                      isSelected: _selectedTabIndex == index,
+                      onTap: () => setState(() => _selectedTabIndex = index),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -113,35 +119,40 @@ class _BookingTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: <Widget>[
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: const Color(0xFF1D2A36),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 116),
+        child: Column(
+          children: <Widget>[
+            Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: const Color(0xFF1D2A36),
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            width: 110,
-            height: 6,
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF1787CF) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: isSelected
-                  ? const <BoxShadow>[
-                      BoxShadow(
-                        color: Color(0x331787CF),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ]
-                  : null,
+            const SizedBox(height: 10),
+            Container(
+              width: 110,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF1787CF) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: isSelected
+                    ? const <BoxShadow>[
+                        BoxShadow(
+                          color: Color(0x331787CF),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

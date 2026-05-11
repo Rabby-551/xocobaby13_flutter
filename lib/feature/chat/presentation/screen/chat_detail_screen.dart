@@ -82,14 +82,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final List<String> optimisticIds = optimisticMessages
         .map((ChatMessageModel message) => message.id)
         .toList(growable: false);
-    setState(() => _isSending = true);
-    if (optimisticMessages.isNotEmpty) {
-      _mergeMessages(optimisticMessages);
-    }
     _composerController.clear();
-    if (_pendingImages.isNotEmpty) {
-      setState(() => _pendingImages.clear());
-    }
+    setState(() {
+      _isSending = true;
+      if (optimisticMessages.isNotEmpty) {
+        _messages = _mergedMessages(_messages, optimisticMessages);
+      }
+      if (_pendingImages.isNotEmpty) {
+        _pendingImages.clear();
+      }
+    });
     _scrollToBottom();
     try {
       final response = pendingImages.isNotEmpty
@@ -106,11 +108,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ? ChatApiMapper.messagesFromList(data, _currentUserId)
           : <ChatMessageModel>[];
       if (!mounted) return;
-      _removeMessagesById(optimisticIds);
-      if (newMessages.isNotEmpty) {
-        _mergeMessages(newMessages);
-      }
-      _scrollToBottom();
+      _replaceOptimisticMessages(optimisticIds, newMessages);
     } catch (e) {
       if (mounted) {
         _removeMessagesById(optimisticIds);
@@ -252,8 +250,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       _currentUserId,
     );
     if (!mounted) return;
+    if (message.isMe && _replaceMatchingOptimisticMessage(message)) {
+      return;
+    }
+    final bool alreadyVisible = _messages.any(
+      (ChatMessageModel item) => item.id == message.id,
+    );
     _mergeMessages(<ChatMessageModel>[message]);
-    _scrollToBottom();
+    if (!alreadyVisible && !message.isMe) {
+      _scrollToBottom();
+    }
   }
 
   void _handleMessageUpdatedEvent(dynamic payload) {
@@ -327,25 +333,32 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _mergeMessages(List<ChatMessageModel> incoming) {
     if (incoming.isEmpty) return;
-    final List<ChatMessageModel> updated = List<ChatMessageModel>.from(
-      _messages,
-    );
-    for (final ChatMessageModel message in incoming) {
-      final int index = updated.indexWhere((m) => m.id == message.id);
-      if (index == -1) {
-        updated.add(message);
-      } else {
-        updated[index] = message;
-      }
+    setState(() => _messages = _mergedMessages(_messages, incoming));
+  }
+
+  List<ChatMessageModel> _mergedMessages(
+    List<ChatMessageModel> current,
+    List<ChatMessageModel> incoming,
+  ) {
+    if (incoming.isEmpty) {
+      return current;
     }
+    final Map<String, ChatMessageModel> byId = <String, ChatMessageModel>{
+      for (final ChatMessageModel message in current) message.id: message,
+    };
+    for (final ChatMessageModel message in incoming) {
+      byId[message.id] = message;
+    }
+    final List<ChatMessageModel> updated = byId.values.toList();
     updated.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    setState(() => _messages = updated);
+    return updated;
   }
 
   void _removeMessage(String messageId) {
     final List<ChatMessageModel> updated = _messages
         .where((m) => m.id != messageId)
         .toList();
+    if (updated.length == _messages.length) return;
     setState(() => _messages = updated);
   }
 
@@ -355,7 +368,71 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final List<ChatMessageModel> updated = _messages
         .where((ChatMessageModel message) => !ids.contains(message.id))
         .toList();
+    if (updated.length == _messages.length) return;
     setState(() => _messages = updated);
+  }
+
+  void _replaceOptimisticMessages(
+    List<String> optimisticIds,
+    List<ChatMessageModel> newMessages,
+  ) {
+    final Set<String> ids = optimisticIds.toSet();
+    final List<ChatMessageModel> updated = List<ChatMessageModel>.from(
+      _messages,
+    );
+    int replacementIndex = 0;
+    for (int index = 0; index < updated.length; index++) {
+      if (!ids.contains(updated[index].id)) {
+        continue;
+      }
+      if (replacementIndex < newMessages.length) {
+        updated[index] = newMessages[replacementIndex];
+        replacementIndex++;
+      } else {
+        updated.removeAt(index);
+        index--;
+      }
+    }
+    while (replacementIndex < newMessages.length) {
+      updated.add(newMessages[replacementIndex]);
+      replacementIndex++;
+    }
+    if (newMessages.isEmpty) {
+      if (updated.length != _messages.length) {
+        setState(() => _messages = updated);
+      }
+      return;
+    }
+    setState(() => _messages = _dedupeSortedMessages(updated));
+  }
+
+  bool _replaceMatchingOptimisticMessage(ChatMessageModel serverMessage) {
+    final int index = _messages.indexWhere((ChatMessageModel message) {
+      return message.isMe &&
+          message.id.startsWith('local-') &&
+          message.type == serverMessage.type &&
+          message.text == serverMessage.text;
+    });
+    if (index == -1) {
+      return false;
+    }
+    final List<ChatMessageModel> updated = List<ChatMessageModel>.from(
+      _messages,
+    );
+    updated[index] = serverMessage;
+    setState(() => _messages = _dedupeSortedMessages(updated));
+    return true;
+  }
+
+  List<ChatMessageModel> _dedupeSortedMessages(
+    List<ChatMessageModel> messages,
+  ) {
+    final Map<String, ChatMessageModel> byId = <String, ChatMessageModel>{
+      for (final ChatMessageModel message in messages) message.id: message,
+    };
+    final List<ChatMessageModel> updated = byId.values.toList();
+    updated.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return updated;
   }
 
   Future<void> _loadBlockedStatus(String otherUserId) async {
@@ -810,7 +887,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 width: 220,
                 height: 180,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   width: 220,
                   height: 180,
                   color: ChatPalette.outgoingBubble,

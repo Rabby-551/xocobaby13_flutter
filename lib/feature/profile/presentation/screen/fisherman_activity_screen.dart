@@ -23,44 +23,54 @@ class FishermanActivityScreen extends StatelessWidget {
         return Column(
           children: <Widget>[
             const SizedBox(height: 6),
-            Row(
-              children: ActivityStatusModel.values.map((
-                ActivityStatusModel status,
-              ) {
-                final bool selected =
-                    controller.selectedActivityStatus.value == status;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => controller.setActivityStatus(status),
-                    child: Column(
-                      children: <Widget>[
-                        Text(
-                          status.label,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: const Color(0xFF1F252F),
-                          ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: ActivityStatusModel.values.map((
+                  ActivityStatusModel status,
+                ) {
+                  final bool selected =
+                      controller.selectedActivityStatus.value == status;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () => controller.setActivityStatus(status),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 104),
+                        child: Column(
+                          children: <Widget>[
+                            Text(
+                              status.label,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: const Color(0xFF1F252F),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: 86,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? ProfilePalette.blue
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          height: 8,
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? ProfilePalette.blue
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
 
             const SizedBox(height: 16),

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:xocobaby13/core/common/widget/button/loading_buttons.dart';
 import 'package:xocobaby13/feature/chat/presentation/widgets/chat_style.dart';
 
 class ChatInputBar extends StatefulWidget {
@@ -28,6 +27,7 @@ class ChatInputBar extends StatefulWidget {
 
 class _ChatInputBarState extends State<ChatInputBar> {
   bool _showEmoji = false;
+  bool _hasText = false;
 
   static const List<String> _emojis = <String>[
     '😀',
@@ -69,6 +69,36 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _hasText = widget.controller.text.trim().isNotEmpty;
+    widget.controller.addListener(_handleTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatInputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleTextChanged);
+      _hasText = widget.controller.text.trim().isNotEmpty;
+      widget.controller.addListener(_handleTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChanged);
+    super.dispose();
+  }
+
+  void _handleTextChanged() {
+    final bool hasText = widget.controller.text.trim().isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+  }
+
   void _insertEmoji(String emoji) {
     final String text = widget.controller.text;
     widget.controller.text = '$text$emoji';
@@ -79,6 +109,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final bool canSend = _hasText || widget.attachmentPaths.isNotEmpty;
+    final bool canTapSend = canSend && !widget.isSending;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: Column(
@@ -90,7 +123,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.attachmentPaths.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (BuildContext context, int index) {
                   final String path = widget.attachmentPaths[index];
                   return Stack(
@@ -136,7 +169,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
             children: <Widget>[
               Expanded(
                 child: Container(
-                  height: 36,
+                  height: 42,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: ChatPalette.inputBorder),
@@ -158,17 +191,21 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         child: TextField(
                           controller: widget.controller,
                           textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => widget.onSend(),
+                          onSubmitted: (_) {
+                            if (canTapSend) {
+                              widget.onSend();
+                            }
+                          },
                           style: const TextStyle(
                             color: ChatPalette.titleText,
-                            fontSize: 12,
+                            fontSize: 15,
                             fontWeight: FontWeight.w500,
                           ),
                           decoration: const InputDecoration(
                             hintText: 'Type your response',
                             hintStyle: TextStyle(
                               color: ChatPalette.searchHint,
-                              fontSize: 12,
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
                             border: InputBorder.none,
@@ -201,23 +238,29 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 ),
               ),
               const SizedBox(width: 8),
-              AppIconButton(
-                onPressed: widget.onSend,
-                isLoading: widget.isSending,
-                loadingColor: Colors.white,
-                icon: const Icon(
-                  Icons.arrow_upward,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: ChatPalette.actionBlue,
-                  shape: const CircleBorder(),
-                  padding: EdgeInsets.zero,
-                ),
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
+              Semantics(
+                button: true,
+                enabled: canSend,
+                label: widget.isSending ? 'Sending message' : 'Send message',
+                child: GestureDetector(
+                  onTap: canTapSend ? widget.onSend : null,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 120),
+                    opacity: canSend ? 1 : 0.55,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: ChatPalette.actionBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

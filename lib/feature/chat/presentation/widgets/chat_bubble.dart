@@ -19,8 +19,8 @@ class ChatBubble extends StatelessWidget {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 240),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        constraints: const BoxConstraints(maxWidth: 260),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe ? ChatPalette.outgoingBubble : ChatPalette.incomingBubble,
           borderRadius: radius,
@@ -32,9 +32,9 @@ class ChatBubble extends StatelessWidget {
           text,
           style: TextStyle(
             color: isMe ? ChatPalette.outgoingText : ChatPalette.incomingText,
-            fontSize: 12,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
-            height: 1.25,
+            height: 1.28,
           ),
         ),
       ),
